@@ -4,8 +4,8 @@ Given(/the following movies exist/) do |movies_table|
   movies_table.hashes.each do |movie|
     # each returned element will be a hash whose key is the table header.
     # you should arrange to add that movie to the database here.
+    Movie.create!(movie)
   end
-  pending "Fill in this step in movie_steps.rb"
 end
 
 Then(/(.*) seed movies should exist/) do |n_seeds|
@@ -15,10 +15,10 @@ end
 # Make sure that one string (regexp) occurs before or after another one
 #   on the same page
 
-Then(/^I should see "(.*)" before "(.*)" in the movie list$/) do |e1, e2|
+Then(/^I should see "(.*)" before "(.*)"(?: in the movie list)?$/) do |e1, e2|
   #  ensure that that e1 occurs before e2.
   #  page.body is the entire content of the page as a string.
-  pending "Fill in this step in movie_steps.rb"
+  expect(page.body).to match(/#{Regexp.quote(e1)}.*#{Regexp.quote(e2)}/m)
 end
 
 
@@ -29,17 +29,53 @@ When(/I check the following ratings: (.*)/) do |rating_list|
   # HINT: use String#split to split up the rating_list, then
   #   iterate over the ratings and reuse the "When I check..." or
   #   "When I uncheck..." steps in lines 89-95 of web_steps.rb
-  pending "Fill in this step in movie_steps.rb"
+  rating_list.split(',').each do |rating|
+    rating = rating.strip
+    begin
+      step %{I check "ratings_#{rating}"}
+    rescue Capybara::ElementNotFound
+      step %{I check "#{rating}"}
+    end
+  end
+end
+
+When(/I uncheck the following ratings: (.*)/) do |rating_list|
+  rating_list.split(',').each do |rating|
+    rating = rating.strip
+    begin
+      step %{I uncheck "ratings_#{rating}"}
+    rescue Capybara::ElementNotFound
+      step %{I uncheck "#{rating}"}
+    end
+  end
 end
 
 Then(/^I should (not )?see the following movies: (.*)$/) do |no, movie_list|
   # Take a look at web_steps.rb Then /^(?:|I )should see "([^"]*)"$/
-  pending "Fill in this step in movie_steps.rb"
+  movie_list.split(',').each do |movie|
+    movie = movie.strip
+    if no
+      step %{I should not see "#{movie}"}
+    else
+      step %{I should see "#{movie}"}
+    end
+  end
 end
 
 Then(/^I should see all the movies$/) do
   # Make sure that all the movies in the app are visible in the table
-  pending "Fill in this step in movie_steps.rb"
+  if page.has_css?("table#movies tbody tr")
+    expect(page.all("table#movies tbody tr").count).to eq Movie.count
+  elsif page.has_css?("table tbody tr")
+    expect(page.all("table tbody tr").count).to eq Movie.count
+  elsif page.has_css?("#movies div[id^='movie_']")
+    expect(page.all("#movies div[id^='movie_']").count).to eq Movie.count
+  elsif page.has_css?("#movies > div")
+    expect(page.all("#movies > div").count).to eq Movie.count
+  end
+  Movie.all.each do |movie|
+    step %{I should see "#{movie.title}"}
+  end
 end
 
 ### Utility Steps Just for this assignment.
